@@ -30,7 +30,7 @@ async function signTransaction(address) {
 }
 
 app.get('/', (req, res) => {
-    res.send('Faucet Running!');
+    res.send('Faucet v1 Running!');
 });
 
 app.post('/faucet', async(req, res) => {
