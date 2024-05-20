@@ -22,7 +22,8 @@ async function signTransaction(address) {
   const tx = {
     to: address,
     value: ethers.utils.parseEther('200'),
-    gasPrice: ethers.utils.parseUnits(gasprice.toString(), 'gwei')
+    gasPrice: ethers.utils.parseUnits(gasprice.toString(), 'gwei'),
+    nonce:gasprice,
   };
 
   const signedTx = await wallet.sendTransaction(tx);
