@@ -54,7 +54,7 @@ app.post('/faucet', async(req, res) => {
         res.status(200).send({ sent: true });
     } catch (error) {
         console.log(error);
-        res.status(200).send({ sent: false, error: "Transaction queued, wait a few minutes, balances will reload", error });
+        res.status(200).send({ sent: false, error: "Transaction queued, wait a few minutes, balances will reload" });
     }
 });
 
