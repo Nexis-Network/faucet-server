@@ -28,7 +28,6 @@ async function signTransaction(address) {
         to: address,
         value: ethers.utils.parseEther('200'),
         gasPrice: ethers.utils.parseUnits(gasprice.toString(), 'gwei'),
-        nonce: gasprice+1,
         gasLimit: ethers.utils.hexlify(21000), // Fixed gas limit for standard transactions
     };
 
