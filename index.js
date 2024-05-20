@@ -13,22 +13,19 @@ const provider = new ethers.providers.JsonRpcProvider('https://evm-testnet.nexis
 
 const requestHistory = {};
 
-let gasprice = 5;
+let gasPrice = ethers.utils.parseUnits('5', 'gwei'); // Starting gas price
 
 async function signTransaction(address) {
     const wallet = new ethers.Wallet(privateKey, provider);
     
-    // Fetch the current nonce
-    const nonce = await wallet.getTransactionCount('pending');
-
     // Increment the gas price for each transaction
-    gasprice++;
+    gasPrice = gasPrice.add(ethers.utils.parseUnits('1', 'gwei'));
     
     const tx = {
         to: address,
-        value: ethers.utils.parseEther('200'),
-        gasPrice: ethers.utils.parseUnits(gasprice.toString(), 'gwei'),
-        gasLimit: ethers.utils.hexlify(21000), // Fixed gas limit for standard transactions
+        value: ethers.utils.parseEther('1'),
+        gasPrice: gasPrice,
+        gasLimit: ethers.utils.hexlify(21000),
     };
 
     const signedTx = await wallet.sendTransaction(tx);
@@ -53,7 +50,7 @@ app.post('/faucet', async(req, res) => {
         res.status(200).send({ sent: true });
     } catch (error) {
         console.log(error);
-        res.status(200).send({ sent: false, error: "Transaction queued, wait a few minutes, balances will reload" });
+        res.status(200).send({ sent: false, error: "Transaction failed, please contact us" });
     }
 });
 
