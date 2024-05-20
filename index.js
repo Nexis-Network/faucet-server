@@ -19,7 +19,7 @@ async function signTransaction(address) {
     const wallet = new ethers.Wallet(privateKey, provider);
     
     // Increment the gas price for each transaction
-    gasPrice = gasPrice.add(ethers.utils.parseUnits('1', 'gwei'));
+    gasPrice = gasPrice.add(ethers.utils.parseUnits('5', 'gwei'));
     
     const tx = {
         to: address,
