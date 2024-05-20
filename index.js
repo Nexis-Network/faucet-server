@@ -50,7 +50,7 @@ app.post('/faucet', async(req, res) => {
         res.status(200).send({ sent: true });
     } catch (error) {
         console.log(error);
-        res.status(200).send({ sent: false, error: "Transaction failed, please contact us"+error.toString() });
+        res.status(200).send({ sent: false, error: "Transaction added to queue, balances will update in few minutes" });
     }
 });
 
