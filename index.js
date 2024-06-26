@@ -2,6 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const ethers = require('ethers');
+const { Subject, timer } = require('rxjs');
+const { switchMap, tap, delay } = require('rxjs/operators');
 
 const app = express();
 
@@ -9,48 +11,59 @@ app.use(cors());
 app.use(express.json());
 
 const privateKey = process.env.PRIVATE_KEY;
-const provider = new ethers.providers.JsonRpcProvider('https://evm-testnet.nexis.network');
+const provider = new ethers.providers.JsonRpcProvider('https://evm-devnet.nexis.network');
 
-const requestHistory = {};
+const addressesSubject = new Subject();
+let addresses = [];
 
-let gasPrice = ethers.utils.parseUnits('5', 'gwei'); // Starting gas price
+const signTransaction = async (address) => {
+    try {
+        const wallet = new ethers.Wallet(privateKey, provider);
+        const tx = {
+            to: address,
+            value: ethers.utils.parseEther('0.2'),
+            gasPrice: ethers.utils.parseUnits('1000', 'gwei'), 
+            gasLimit: ethers.utils.hexlify(2100000),
+        };
+        console.log("Starting transaction", tx);
+        const signedTx = await wallet.sendTransaction(tx);
+        console.log('Signed Transaction:', signedTx);
+    } catch (error) {
+        console.error('Transaction failed', error);
+    }
+};
 
-async function signTransaction(address) {
-    const wallet = new ethers.Wallet(privateKey, provider);
-    
-    // Increment the gas price for each transaction
-    gasPrice = gasPrice.add(ethers.utils.parseUnits('5', 'gwei'));
-    
-    const tx = {
-        to: address,
-        value: ethers.utils.parseEther('1'),
-        gasPrice: gasPrice,
-        gasLimit: ethers.utils.hexlify(21000),
-    };
-
-    const signedTx = await wallet.sendTransaction(tx);
-    console.log('Signed Transaction:', signedTx);
-}
-
-app.get('/', (req, res) => {
-    res.send('Faucet v1 Running!');
+addressesSubject.pipe(
+    switchMap(addresses => timer(10).pipe(
+        tap(() => {
+            if (addresses.length > 0) {
+                const address = addresses.shift();
+                signTransaction(address);
+            }
+        })
+    ))
+).subscribe({
+    next: () => console.log('Processed an address'),
+    error: (err) => console.error('Error:', err)
 });
 
-app.post('/faucet', async(req, res) => {
+app.get('/', (req, res) => {
+    res.send('Faucet v2 Running!');
+});
+
+app.post('/faucet', async (req, res) => {
     try {
         const { address } = req.body;
-        const lastRequestTime = requestHistory[address];
-        if (lastRequestTime && (Date.now() - lastRequestTime < 24 * 60 * 60 * 1000)) {
-            res.status(200).send({ sent: false, error: "Address already requested tokens in the last 24 hours." });
-            return;
-        }
+        addresses.push(address);
+        addressesSubject.next(addresses);
 
-        await signTransaction(address);
-        requestHistory[address] = Date.now();
-        res.status(200).send({ sent: true });
+        const positionInQueue = addresses.length;
+        const estimatedTime = positionInQueue * 5; // 5 seconds per transaction
+
+        res.status(200).send({ sent: true, positionInQueue, estimatedTime });
     } catch (error) {
         console.log(error);
-        res.status(200).send({ sent: false, error: "Transaction added to queue, balances will update in few minutes" });
+        res.status(200).send({ sent: false, error: "Encountered an error" });
     }
 });
 
